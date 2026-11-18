@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "wazuh": {
+      "command": ".venv/bin/python",
+      "args": ["wazuh_mcp.py"],
+      "env": {
+        "WAZUH_API_URL": "https://127.0.0.1:55000",
+        "WAZUH_API_USER": "wazuh-wui",
+        "WAZUH_API_PASS": "${WAZUH_API_PASS}",
+        "WAZUH_INDEXER_URL": "https://127.0.0.1:9200",
+        "WAZUH_INDEXER_USER": "admin",
+        "WAZUH_INDEXER_PASS": "${WAZUH_INDEXER_PASS}",
+        "WAZUH_VERIFY_SSL": "false"
+      }
+    }
+  }
+}

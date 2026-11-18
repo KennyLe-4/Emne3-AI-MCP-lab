@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="no"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emne 3 — AI-SOC-agent med MCP</title>
+<style>
+  :root{
+    --navy:#0D1F4F; --ink:#1E2A38; --muted:#5C6B7E; --surface:#EEF2F6; --card:#fff; --rail:#E1E8EF;
+    --blue:#176C93; --green:#2E7D5B; --amber:#E0A32E; --red:#C0392B;
+    --soft-blue:#EAF1F6; --soft-green:#EAF3EC; --soft-amber:#FBF3E0; --soft-red:#FBEEEC;
+    --code-bg:#0D1F4F; --code-fg:#A6F0B0; --code-cmt:#8FB3C9;
+    --term-bg:#0b1020;
+    --sans:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",Consolas,"Courier New",monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --navy:#132a63; --ink:#E6ECF3; --muted:#9FB0C2; --surface:#0B1320; --card:#121C2B; --rail:#24344A;
+    --blue:#54B4D8; --green:#4FB488; --amber:#E7B64B; --red:#E27A70;
+    --soft-blue:#16283c; --soft-green:#15291f; --soft-amber:#2a2413; --soft-red:#2c1917;
+    --code-bg:#060C14; --term-bg:#05080f; color-scheme:dark;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--sans);line-height:1.55;font-size:15px}
+  .wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+  header{background:var(--navy);color:#fff;border-radius:0 0 16px 16px;padding:22px max(16px,env(safe-area-inset-left,0px)) 20px}
+  header .inner{max-width:760px;margin:0 auto}
+  .kick{font-size:11px;letter-spacing:1.6px;color:#8FB3C9;font-weight:700;text-transform:uppercase}
+  h1{font-family:Georgia,serif;font-size:26px;margin:7px 0 5px}
+  header p{margin:0;color:#C9D6E3;font-size:14px}
+  h2{font-family:Georgia,serif;color:var(--navy);font-size:19px;border-bottom:2px solid var(--navy);padding-bottom:5px;margin:26px 0 6px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+  :root:not([data-theme="light"]) h2{color:var(--ink);border-color:var(--rail)}
+  h3{font-size:15px;margin:16px 0 4px;color:var(--ink)}
+  p{margin:6px 0 10px}
+  .expl{color:var(--muted);font-size:14px}
+  ol,ul{margin:6px 0 10px;padding-left:20px}
+  li{margin:3px 0}
+  code.inl{font-family:var(--mono);background:var(--navy);color:#A6F0B0;padding:1px 5px;border-radius:4px;font-size:.85em}
+  :root:not([data-theme="light"]) code.inl{background:#0b1830}
+  .sub{font-weight:700;color:var(--blue);margin:14px 0 4px;font-size:14px}
+
+  .loc{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:2px 10px;border-radius:20px;white-space:nowrap}
+  .loc.kali{background:var(--soft-blue);color:var(--blue);border:1px solid var(--blue)}
+  .loc.victim{background:var(--soft-green);color:var(--green);border:1px solid var(--green)}
+
+  .block{position:relative;background:var(--code-bg);border-radius:10px;margin:8px 0 14px;overflow:hidden}
+  .block pre{margin:0;padding:14px 15px;padding-top:34px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--code-fg);white-space:pre}
+  .block .cmt{color:var(--code-cmt)}
+  .copy{position:absolute;top:7px;right:7px;background:rgba(255,255,255,.12);color:#cfe;border:1px solid rgba(255,255,255,.2);border-radius:7px;font-family:var(--sans);font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer}
+  .copy:hover{background:rgba(255,255,255,.22)}
+  .copy.ok{background:var(--green);color:#fff;border-color:var(--green)}
+
+  .term{background:var(--term-bg);border-radius:10px;overflow:hidden;margin:10px 0;border:1px solid #223}
+  .term .bar{background:#161c2e;padding:8px 12px;display:flex;align-items:center;gap:7px}
+  .term .bar .dot{width:11px;height:11px;border-radius:50%}
+  .term .bar .r{background:#ff5f57}.term .bar .y{background:#febc2e}.term .bar .g{background:#28c840}
+  .term .bar .ttl{color:#8f9bb3;font-size:12px;margin-left:8px;font-family:var(--mono)}
+  .term pre{margin:0;padding:13px 15px;font-family:var(--mono);font-size:12.5px;line-height:1.7;color:#cdd6e6;white-space:pre-wrap;word-break:break-word}
+  .term .kali{color:#56c2f0;font-weight:700}
+  .term .vic{color:#7ee081;font-weight:700}
+  .term .you{color:#f2c879}
+  .term .dim{color:#7c88a0}
+  .term .ok{color:#7ee081}
+
+  .note{background:var(--soft-blue);border-left:4px solid var(--blue);border-radius:6px;padding:9px 13px;margin:10px 0;font-size:13.5px}
+  .warn{background:var(--soft-red);border-left:4px solid var(--red);border-radius:6px;padding:9px 13px;margin:10px 0;font-size:13.5px}
+  .warn b{color:var(--red)}
+  .tip{background:var(--soft-green);border-left:4px solid var(--green);border-radius:6px;padding:9px 13px;margin:10px 0;font-size:13.5px}
+  .tip b{color:var(--green)}
+
+  .card{background:var(--card);border:1px solid var(--rail);border-radius:10px;padding:12px 15px;margin:8px 0}
+  .lo{list-style:none;padding-left:0;margin:6px 0}
+  .lo li{padding-left:22px;position:relative;margin:5px 0;font-size:14px}
+  .lo li::before{content:"";position:absolute;left:0;top:7px;width:8px;height:8px;border-radius:2px;background:var(--blue)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;background:var(--soft-amber);color:var(--amber);border:1px solid var(--amber);padding:0 6px;border-radius:5px;margin-right:4px}
+
+  details.fasit{background:var(--card);border:1px solid var(--rail);border-left:4px solid var(--amber);border-radius:8px;margin:10px 0;padding:0}
+  details.fasit>summary{cursor:pointer;padding:11px 14px;font-weight:700;color:var(--amber);font-size:14px;list-style:none}
+  details.fasit>summary::-webkit-details-marker{display:none}
+  details.fasit>summary::before{content:"▸ ";color:var(--amber)}
+  details.fasit[open]>summary::before{content:"▾ "}
+  details.fasit .body{padding:0 14px 12px}
+
+  /* enkel arkitektur-figur */
+  .arch{display:flex;align-items:stretch;gap:0;margin:12px 0;flex-wrap:wrap}
+  .arch .box{flex:1;min-width:150px;background:var(--card);border:1px solid var(--rail);border-radius:10px;padding:11px 13px;text-align:center}
+  .arch .box .t{font-weight:700;font-size:13.5px;color:var(--ink)}
+  .arch .box .s{font-size:12px;color:var(--muted);margin-top:3px}
+  .arch .arrow{display:flex;align-items:center;justify-content:center;color:var(--blue);font-weight:700;font-size:18px;padding:0 6px}
+  @media(max-width:560px){.arch{flex-direction:column}.arch .arrow{transform:rotate(90deg);padding:4px 0}}
+
+  footer{color:var(--muted);font-size:12.5px;text-align:center;margin-top:30px}
+</style></head><body>
+
+<header><div class="inner">
+  <div class="kick">Gokstad Akademiet · Emne 3 · ACS103</div>
+  <h1>AI-SOC-agent med MCP</h1>
+  <p>Bygg en MCP-server som gir en AI-agent lesetilgang til Wazuh, og la den hjelpe deg å analysere angrepene du selv kjører.</p>
+</div></header>
+
+<div class="wrap">
+
+  <div class="warn"><b>Etikk og rammer:</b> alt kjøres kun i ditt eget, isolerte lab-miljø. Agenten får bare <b>lesetilgang</b> til Wazuh. Den kan ikke endre, slette eller svare på angrep. Gi aldri en AI-agent mer tilgang enn oppgaven krever. Den regelen gjelder like mye i en ekte jobb som her i laben.</div>
+
+  <h2>Hva du bygger</h2>
+  <p class="expl">Du har allerede en SOC fra forrige lab: Wazuh på Kali, med victim som aktiv agent. Nå setter du en AI-agent oppå. En liten <b>MCP-server</b> (ett Python-script) oversetter Wazuh sitt API til «verktøy» en agent kan kalle. Da kan du spørre SOC-en på vanlig norsk, for eksempel «hva skjedde mot victim siste time?», i stedet for å klikke deg gjennom dashbordet.</p>
+
+  <div class="arch">
+    <div class="box"><div class="t">Claude</div><div class="s">agenten: resonnerer og kaller verktøy</div></div>
+    <div class="arrow">→</div>
+    <div class="box"><div class="t">MCP-server</div><div class="s">wazuh_mcp.py, 6 verktøy</div></div>
+    <div class="arrow">→</div>
+    <div class="box"><div class="t">Wazuh</div><div class="s">API 55000 + indexer 9200</div></div>
+  </div>
+  <p class="expl">MCP (Model Context Protocol) er en standard måte å koble en AI-agent til verktøy og data. Flyten er enkel: agenten spør, serveren henter fra Wazuh, og agenten tolker svaret. Det eneste som sendes til Claude er det agenten faktisk spør om, ikke hele Wazuh. Vi kommer tilbake til hvorfor det er viktig i oppgavene.</p>
+
+  <h2>Mål for laben</h2>
+  <div class="card">
+    <ul class="lo">
+      <li><span class="tag">K6</span> Forstå deteksjon og hvordan logger, hendelser og alarmer blir til analyserbar kontekst.</li>
+      <li><span class="tag">K9</span> Se samspillet mellom offensivt (angrepet du kjører) og defensivt (det agenten leser i Wazuh).</li>
+      <li><span class="tag">K11</span> Kjenne SOC-analytikerrollen og hvordan AI-verktøy brukes i den.</li>
+      <li><span class="tag">T.13.5</span> Vurdere <b>begrensningene i automatisering</b>: hva agenten gjør godt, og hvor mennesket må inn.</li>
+    </ul>
+  </div>
+
+  <h2>Forutsetninger <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Før du starter må forrige lab være oppe. Sjekk raskt:</p>
+  <ul>
+    <li>Wazuh-dashbordet åpner på <code class="inl">https://localhost</code> i Kali sin Firefox.</li>
+    <li>Victim viser <code class="inl">Active</code> under <b>Agents</b> i dashbordet.</li>
+    <li>Du har en (gratis) Claude-konto til innlogging.</li>
+  </ul>
+  <div class="note">Bekreft at de to Wazuh-API-ene svarer (401 = oppe, bare uten token):</div>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>curl -k https://127.0.0.1:55000
+curl -k https://127.0.0.1:9200</pre></div>
+
+  <h2>Steg 1: Hent legitimasjonen <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Wazuh-API-et krever brukernavn og passord. I Docker-oppsettet ligger de i din egen <code class="inl">docker-compose.yml</code>. Du henter dem derfra, så du slipper å få dem tilsendt. Dette eksporterer dem rett inn i miljøet (passordet vises aldri på skjermen):</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>cd /opt/wazuh-docker/single-node
+export WAZUH_API_USER='wazuh-wui'
+export WAZUH_API_PASS=$(grep -m1 API_PASSWORD docker-compose.yml | cut -d= -f2)
+export WAZUH_INDEXER_USER='admin'
+export WAZUH_INDEXER_PASS=$(grep -m1 INDEXER_PASSWORD docker-compose.yml | cut -d= -f2)</pre></div>
+  <div class="warn"><b>Merk deg dette:</b> oppsettet bruker fortsatt standardpassordene som fulgte med Wazuh-imaget. I lab er det greit, men hos en kunde er dette nettopp den feilen en SOC-analytiker skal fange opp. Default-passord som aldri ble endret er et reelt funn.</div>
+
+  <h2>Steg 2: Lag MCP-serveren <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Klon repoet (det inneholder <code class="inl">wazuh_mcp.py</code> og <code class="inl">.mcp.json</code>), lag et virtuelt Python-miljø, og installer de to pakkene serveren trenger.</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>cd ~
+git clone https://github.com/KennyLe-4/Emne3-AI-MCP-lab.git
+cd Emne3-AI-MCP-lab
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt</pre></div>
+  <div class="note">Åpne gjerne <code class="inl">wazuh_mcp.py</code> og les den. Det er under 200 linjer, og hvert <code class="inl">@mcp.tool()</code> er ett verktøy agenten kan kalle. Dette <b>er</b> MCP-serveren. Ingen magi der.</div>
+
+  <h2>Steg 3: Selvtest <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Før du kobler på AI: sjekk at serveren når Wazuh. Kjør den i selvtest-modus (bruker passordene du eksporterte i Steg 1, så de må være satt i samme terminal).</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>python wazuh_mcp.py --selftest</pre></div>
+  <p class="expl">Du skal se <code class="inl">"ok": true</code> for både manager og indexer, en liste over agenter (deriblant <code class="inl">emne3-victim</code>), og hvilke regler som har fyrt mest:</p>
+  <div class="term">
+    <div class="bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="ttl">Kali — selvtest</span></div>
+<pre><span class="kali">(.venv) kali@kali</span>:~/Emne3-AI-MCP-lab$ <span class="you">python wazuh_mcp.py --selftest</span>
+{
+  "manager": { "ok": <span class="ok">true</span>, "version": "4.14.8" },
+  "indexer": { "ok": <span class="ok">true</span>, "version": "7.10.2" }
+}
+[
+  { "id": "001", "status": "<span class="ok">active</span>", "name": "emne3-victim", "ip": "192.168.64.9" }
+]</pre>
+  </div>
+  <div class="warn"><b>Feiler den?</b> <code class="inl">Connection refused</code> = Wazuh er ikke oppe (sjekk Docker). <code class="inl">401</code> i feilen = feil passord (gjorde du Steg 1 i samme terminal?). Fiks det før du går videre. Er ikke selvtesten grønn, hjelper det ikke å koble på Claude.</div>
+
+  <h2>Lag en gratis Claude-konto</h2>
+  <p class="expl">Du trenger en Claude-konto for å logge inn i neste steg. Gratis-kontoen holder fint til denne laben, og du trenger ikke oppgi betalingskort. Dette gjør du bare én gang:</p>
+  <ol>
+    <li>Gå til <code class="inl">claude.ai</code> i nettleseren.</li>
+    <li>Klikk <b>Sign up</b>, og registrer deg med e-post eller en Google-konto.</li>
+    <li>Bekreft e-posten hvis du blir bedt om det.</li>
+  </ol>
+  <div class="tip"><b>Selve innloggingen skjer i Steg 4.</b> Når du starter <code class="inl">claude</code> for første gang, åpner den nettleseren og ber deg logge inn med denne kontoen. Du logger inn én gang, så husker den deg etterpå.</div>
+  <div class="note"><b>Gratis-kontoen har en daglig meldingsgrense.</b> Hvert spørsmål til agenten teller mot den, og agenten gjør gjerne flere verktøy-kall per spørsmål, så grensen nås raskere enn ved vanlig prat. Jobb to og to og hold spørsmålene korte, så rekker dere gjennom hele laben på én økt.</div>
+
+  <h2>Steg 4: Installer Claude Code og koble på <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Claude Code er terminal-versjonen av Claude, og den kan bruke MCP-servere. Installer den, logg inn, og registrer serveren din.</p>
+  <div class="sub">Installer (hopp over om <code class="inl">claude --version</code> allerede svarer)</div>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>curl -fsSL https://claude.ai/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
+claude --version</pre></div>
+  <div class="sub">Registrer Wazuh-serveren (kjør fra repo-mappa, i samme terminal der passordene er satt)</div>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>claude mcp add wazuh -- $(pwd)/.venv/bin/python $(pwd)/wazuh_mcp.py</pre></div>
+  <div class="note"><code class="inl">claude mcp add</code> fanger miljøvariablene fra terminalen den kjøres i. Derfor må passordene fra Steg 1 fortsatt være eksportert her. Byttet du terminal underveis, kjør Steg 1 på nytt først.</div>
+  <div class="sub">Start Claude</div>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>claude</pre></div>
+  <p class="expl">Første gang åpner den nettleseren for innlogging, så godkjenn med Claude-kontoen din. Den spør også om du stoler på MCP-serveren i prosjektet; svar ja.</p>
+
+  <h2>Steg 5: Første spørsmål <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Inne i Claude, sjekk først at verktøyene er lastet:</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>/mcp</pre></div>
+  <p class="expl">Du skal se <code class="inl">wazuh</code> med seks verktøy. Still så det første ekte spørsmålet. Skriv det som en vanlig melding:</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>Kjør wazuh_status, og oppsummer hva som har skjedd mot emne3-victim
+siste 60 minutter. Hvilke regler lager mest stoy?</pre></div>
+  <div class="tip"><b>Legg merke til hva som skjer:</b> agenten velger selv hvilke verktøy den kaller og i hvilken rekkefølge, og tolker svaret. Du ba ikke om et bestemt API-kall, du beskrev et mål. Et script hadde gjort nøyaktig det du skrev; agenten finner ut stegene selv.</div>
+
+  <h2>Steg 6: Angrip, så la agenten oppdage <span class="loc kali">Fra Kali</span></h2>
+  <p class="expl">Nå ser du hele sløyfa. Åpne en <b>ny terminal</b> på Kali (ikke i Claude-økta) og kjør et angrep mot victim. Bytt inn victim sin IP.</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>VICTIM=192.168.x.x
+hydra -l labadmin -P /usr/share/wordlists/rockyou.txt ssh://$VICTIM -t 4 -f</pre></div>
+  <p class="expl">Vent et minutt, gå tilbake til Claude-økta, og spør:</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>Det kom nettopp SSH-trafikk mot emne3-victim. Finn brute force-forsok,
+gi meg kilde-IP, antall forsok, hvilken Wazuh-regel som fyrte og MITRE-teknikken.
+Er dette et ekte funn eller stoy?</pre></div>
+  <div class="tip"><b>Dette er T.15 i praksis: fra angrep til forsvar.</b> Samme hendelse, sett fra to sider: verktøyet du kjørte, og analytikeren (agenten) som leser sporene i Wazuh.</div>
+
+  <h2>Oppgaver</h2>
+  <p class="expl">Nå er oppsettet ferdig. Resten er analyse. Jobb deg gjennom oppgavene. Prøv selv først; fasit ligger nederst, men den er mye mindre verdt hvis du åpner den for tidlig.</p>
+
+  <div class="card">
+    <h3>Oppgave 1: Still de fem analytiker-spørsmålene</h3>
+    <p class="expl">Få agenten til å hjelpe deg svare på disse, og noter svarene. Vær kildekritisk, og sjekk at det agenten påstår faktisk står i dataene.</p>
+    <ol>
+      <li>Hvilke kilde-IP-er står bak flest alarmer, og hva forsøkte de?</li>
+      <li>Hvilke tre regler fyrer mest? Hvor mange av dem er reell trussel vs. støy?</li>
+      <li>Nådde SSH brute force-forsøket ditt helt frem til en vellykket innlogging, eller stoppet det på forsøk?</li>
+      <li>Finnes det alarmer agenten ikke klarer å forklare godt? Hvorfor?</li>
+      <li>Hvis du var SOC Tier 1: hvilke alarmer ville du eskalert, og hvilke ville du avfeid?</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3>Oppgave 2: Utfordring, gi agenten et nytt verktøy <span class="loc kali">Fra Kali</span></h3>
+    <p class="expl">Ingen oppskrift her. Åpne <code class="inl">wazuh_mcp.py</code>, se hvordan et <code class="inl">@mcp.tool()</code> er bygget, og legg til ett nytt verktøy selv, for eksempel <code class="inl">get_failed_logins(minutes)</code> som henter mislykkede innlogginger, eller <code class="inl">alerts_for_ip(ip)</code> som viser alt fra én IP. Start Claude på nytt, og be agenten bruke det nye verktøyet.</p>
+    <p class="expl">Mål: forstå at du selv bestemmer hva agenten <i>kan</i>. Den har ikke magisk tilgang, bare de verktøyene du ga den.</p>
+  </div>
+
+  <div class="card">
+    <h3>Oppgave 3: Refleksjon (T.13.5)</h3>
+    <p class="expl">Skriv kort (3 til 5 setninger per punkt):</p>
+    <ul>
+      <li>Hva gjorde agenten raskere eller bedre enn å klikke i dashbordet selv?</li>
+      <li>Hvor tok den feil, overdrev, eller «fant på» noe som ikke stemte med dataene?</li>
+      <li>Hvorfor ga vi den bare lesetilgang? Hva kunne gått galt med skrive-/responstilgang?</li>
+      <li>Ville du stolt på denne agenten alene i en ekte SOC? Hva måtte eventuelt være på plass først?</li>
+    </ul>
+  </div>
+
+  <details class="fasit">
+    <summary>Fasit og veilederkommentarer (åpne etter at du har prøvd selv)</summary>
+    <div class="body">
+      <p class="expl"><b>Oppgave 1:</b> Svarene avhenger av hva du kjørte, men pek studentene mot: brute force-IP = Kali sin lab-IP (regel 5710/5712-serien, MITRE T1110). Mest støy i et friskt lab er typisk rootcheck (regel 510) og eventuelle Suricata ET INFO-alarmer, som er lavt nivå og ikke trussel. «Ekte funn» = brute force og eventuelle web/command-injection-treff; «støy» = rootcheck, P2P-info, Wazuh start/stop-meldinger.</p>
+      <p class="expl"><b>Punkt 3 (viktig):</b> hydra med rockyou treffer <i>ikke</i> riktig passord (labadmin2026 ligger neppe tidlig i lista), så Wazuh ser mange <code class="inl">authentication_failed</code> men ingen <code class="inl">authentication_success</code>. Et godt svar skiller forsøk fra vellykket innbrudd. Det er kjernen i å lese en brute force riktig.</p>
+      <p class="expl"><b>Punkt 4:</b> agenten sliter med alarmer der konteksten ikke finnes i Wazuh (f.eks. execve/prosess-oppførsel som bare ligger i auditd, ikke ingestet). Det er et reelt poeng om <b>synlighetsgrenser</b> (T.10.6): agenten kan bare se det datakilden faktisk sender.</p>
+      <p class="expl"><b>Oppgave 2:</b> et korrekt nytt tool følger mønsteret: <code class="inl">@mcp.tool()</code>, en funksjon med typede argumenter og docstring (agenten leser docstringen for å forstå når verktøyet skal brukes), som kaller <code class="inl">_idx_search(...)</code> eller <code class="inl">_api_get(...)</code> og returnerer JSON. Poenget er at de ser koblingen mellom hvilke verktøy serveren har og hva agenten kan gjøre, ikke at koden er feilfri.</p>
+      <p class="expl"><b>Oppgave 3:</b> det er ikke noe fasitsvar, men gode refleksjoner nevner: hallusinasjon/overtolkning, at agenten er like god som datakilden og regelkvaliteten (T.9.5), minste privilegium (derfor lesetilgang), og at mennesket må validere før eskalering/respons. «Ville du stolt på den alene?» Forventet svar er nei: ikke uten menneske-i-loop, logging av tool-kall og begrensede rettigheter.</p>
+    </div>
+  </details>
+
+  <h2>Hvis noe krangler</h2>
+  <ul>
+    <li><b><code class="inl">claude: command not found</code></b> etter installasjon → <code class="inl">export PATH="$HOME/.local/bin:$PATH"</code>, evt. åpne nytt terminalvindu.</li>
+    <li><b><code class="inl">/mcp</code> viser ingen wazuh-server</b> → du registrerte den i en annen mappe/terminal. Kjør <code class="inl">claude mcp add</code> på nytt fra repo-mappa, med passordene satt.</li>
+    <li><b>Agenten svarer at tool-kall feiler med 401</b> → passordene var ikke eksportert da du kjørte <code class="inl">claude mcp add</code>. Sett dem (Steg 1) og registrer på nytt.</li>
+    <li><b>Tomt svar / ingen alarmer</b> → kjør et angrep (Steg 6) først, så er det noe å finne.</li>
+  </ul>
+
+  <footer>Gokstad Akademiet — Emne 3 (ACS103). Alt kjøres kun i eget, isolert lab-miljø. Agenten har kun lesetilgang.</footer>
+</div>
+
+<script>
+document.querySelectorAll('.block').forEach(function(block){
+  var btn=block.querySelector('.copy'), pre=block.querySelector('pre');
+  btn.addEventListener('click',function(){
+    var txt=pre.innerText;
+    function ok(){btn.textContent='Kopiert ✓';btn.classList.add('ok');setTimeout(function(){btn.textContent='Kopier';btn.classList.remove('ok');},1400);}
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok).catch(sel);
+    }else{sel();}
+    function sel(){try{var r=document.createRange();r.selectNodeContents(pre);var s=window.getSelection();s.removeAllRanges();s.addRange(r);document.execCommand&&document.execCommand('copy');ok();}catch(e){}}
+  });
+});
+</script>
+</body></html>

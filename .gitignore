@@ -1,0 +1,5 @@
+# Aldri sjekk inn hemmeligheter eller virtuelt miljø
+.env
+.venv/
+__pycache__/
+*.pyc
