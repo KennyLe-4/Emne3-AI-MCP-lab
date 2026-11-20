@@ -128,11 +128,20 @@
   <ul>
     <li>Wazuh-dashbordet åpner på <code class="inl">https://localhost</code> i Kali sin Firefox.</li>
     <li>Victim viser <code class="inl">Active</code> under <b>Agents</b> i dashbordet.</li>
-    <li>Du har en (gratis) Claude-konto til innlogging.</li>
   </ul>
   <div class="note">Bekreft at de to Wazuh-API-ene svarer (401 = oppe, bare uten token):</div>
   <div class="block"><button class="copy" type="button">Kopier</button><pre>curl -k https://127.0.0.1:55000
 curl -k https://127.0.0.1:9200</pre></div>
+
+  <h2>Lag en gratis Claude-konto</h2>
+  <p class="expl">Du trenger en Claude-konto for innlogging senere. Lag den nå, så er du klar. Gratis-kontoen holder fint til denne laben, og du trenger ikke oppgi betalingskort. Dette gjør du bare én gang:</p>
+  <ol>
+    <li>Gå til <code class="inl">claude.ai</code> i nettleseren.</li>
+    <li>Klikk <b>Sign up</b>, og registrer deg med e-post eller en Google-konto.</li>
+    <li>Bekreft e-posten hvis du blir bedt om det.</li>
+  </ol>
+  <div class="tip"><b>Selve innloggingen skjer i Steg 4.</b> Når du starter <code class="inl">claude</code> for første gang, åpner den nettleseren og ber deg logge inn med denne kontoen. Du logger inn én gang, så husker den deg etterpå.</div>
+  <div class="note"><b>Gratis-kontoen har en daglig meldingsgrense.</b> Hvert spørsmål til agenten teller mot den, og agenten gjør gjerne flere verktøy-kall per spørsmål, så grensen nås raskere enn ved vanlig prat. Jobb to og to og hold spørsmålene korte, så rekker dere gjennom hele laben på én økt.</div>
 
   <h2>Steg 1: Hent legitimasjonen <span class="loc kali">Fra Kali</span></h2>
   <p class="expl">Wazuh-API-et krever brukernavn og passord. I Docker-oppsettet ligger de i din egen <code class="inl">docker-compose.yml</code>. Du henter dem derfra, så du slipper å få dem tilsendt. Dette eksporterer dem rett inn i miljøet (passordet vises aldri på skjermen):</p>
@@ -169,16 +178,6 @@ pip install -r requirements.txt</pre></div>
   </div>
   <div class="warn"><b>Feiler den?</b> <code class="inl">Connection refused</code> = Wazuh er ikke oppe (sjekk Docker). <code class="inl">401</code> i feilen = feil passord (gjorde du Steg 1 i samme terminal?). Fiks det før du går videre. Er ikke selvtesten grønn, hjelper det ikke å koble på Claude.</div>
 
-  <h2>Lag en gratis Claude-konto</h2>
-  <p class="expl">Du trenger en Claude-konto for å logge inn i neste steg. Gratis-kontoen holder fint til denne laben, og du trenger ikke oppgi betalingskort. Dette gjør du bare én gang:</p>
-  <ol>
-    <li>Gå til <code class="inl">claude.ai</code> i nettleseren.</li>
-    <li>Klikk <b>Sign up</b>, og registrer deg med e-post eller en Google-konto.</li>
-    <li>Bekreft e-posten hvis du blir bedt om det.</li>
-  </ol>
-  <div class="tip"><b>Selve innloggingen skjer i Steg 4.</b> Når du starter <code class="inl">claude</code> for første gang, åpner den nettleseren og ber deg logge inn med denne kontoen. Du logger inn én gang, så husker den deg etterpå.</div>
-  <div class="note"><b>Gratis-kontoen har en daglig meldingsgrense.</b> Hvert spørsmål til agenten teller mot den, og agenten gjør gjerne flere verktøy-kall per spørsmål, så grensen nås raskere enn ved vanlig prat. Jobb to og to og hold spørsmålene korte, så rekker dere gjennom hele laben på én økt.</div>
-
   <h2>Steg 4: Installer Claude Code og koble på <span class="loc kali">Fra Kali</span></h2>
   <p class="expl">Claude Code er terminal-versjonen av Claude, og den kan bruke MCP-servere. Installer den, logg inn, og registrer serveren din.</p>
   <div class="sub">Installer (hopp over om <code class="inl">claude --version</code> allerede svarer)</div>
@@ -197,17 +196,18 @@ claude --version</pre></div>
   <div class="block"><button class="copy" type="button">Kopier</button><pre>/mcp</pre></div>
   <p class="expl">Du skal se <code class="inl">wazuh</code> med seks verktøy. Still så det første ekte spørsmålet. Skriv det som en vanlig melding:</p>
   <div class="block"><button class="copy" type="button">Kopier</button><pre>Kjør wazuh_status, og oppsummer hva som har skjedd mot emne3-victim
-siste 60 minutter. Hvilke regler lager mest stoy?</pre></div>
+siste 60 minutter. Hvilke regler lager mest støy?</pre></div>
   <div class="tip"><b>Legg merke til hva som skjer:</b> agenten velger selv hvilke verktøy den kaller og i hvilken rekkefølge, og tolker svaret. Du ba ikke om et bestemt API-kall, du beskrev et mål. Et script hadde gjort nøyaktig det du skrev; agenten finner ut stegene selv.</div>
 
   <h2>Steg 6: Angrip, så la agenten oppdage <span class="loc kali">Fra Kali</span></h2>
   <p class="expl">Nå ser du hele sløyfa. Åpne en <b>ny terminal</b> på Kali (ikke i Claude-økta) og kjør et angrep mot victim. Bytt inn victim sin IP.</p>
   <div class="block"><button class="copy" type="button">Kopier</button><pre>VICTIM=192.168.x.x
 hydra -l labadmin -P /usr/share/wordlists/rockyou.txt ssh://$VICTIM -t 4 -f</pre></div>
-  <p class="expl">Vent et minutt, gå tilbake til Claude-økta, og spør:</p>
-  <div class="block"><button class="copy" type="button">Kopier</button><pre>Det kom nettopp SSH-trafikk mot emne3-victim. Finn brute force-forsok,
-gi meg kilde-IP, antall forsok, hvilken Wazuh-regel som fyrte og MITRE-teknikken.
-Er dette et ekte funn eller stoy?</pre></div>
+  <div class="note"><b>Angrepet finner ikke riktig passord</b> (det er ikke poenget), så det kjører til du stopper det. La det gå i cirka ett minutt, så det rekker å lage nok mislykkede innlogginger i Wazuh, og stopp det så med <b>Ctrl+C</b>.</div>
+  <p class="expl">Gi Wazuh et øyeblikk til å ta imot alarmene, gå så tilbake til Claude-økta og spør:</p>
+  <div class="block"><button class="copy" type="button">Kopier</button><pre>Det kom nettopp SSH-trafikk mot emne3-victim. Finn brute force-forsøk,
+gi meg kilde-IP, antall forsøk, hvilken Wazuh-regel som fyrte og MITRE-teknikken.
+Er dette et ekte funn eller støy?</pre></div>
   <div class="tip"><b>Dette er T.15 i praksis: fra angrep til forsvar.</b> Samme hendelse, sett fra to sider: verktøyet du kjørte, og analytikeren (agenten) som leser sporene i Wazuh.</div>
 
   <h2>Oppgaver</h2>
@@ -246,7 +246,7 @@ Er dette et ekte funn eller stoy?</pre></div>
     <summary>Fasit og veilederkommentarer (åpne etter at du har prøvd selv)</summary>
     <div class="body">
       <p class="expl"><b>Oppgave 1:</b> Svarene avhenger av hva du kjørte, men pek studentene mot: brute force-IP = Kali sin lab-IP (regel 5710/5712-serien, MITRE T1110). Mest støy i et friskt lab er typisk rootcheck (regel 510) og eventuelle Suricata ET INFO-alarmer, som er lavt nivå og ikke trussel. «Ekte funn» = brute force og eventuelle web/command-injection-treff; «støy» = rootcheck, P2P-info, Wazuh start/stop-meldinger.</p>
-      <p class="expl"><b>Punkt 3 (viktig):</b> hydra med rockyou treffer <i>ikke</i> riktig passord (labadmin2026 ligger neppe tidlig i lista), så Wazuh ser mange <code class="inl">authentication_failed</code> men ingen <code class="inl">authentication_success</code>. Et godt svar skiller forsøk fra vellykket innbrudd. Det er kjernen i å lese en brute force riktig.</p>
+      <p class="expl"><b>Punkt 3 (viktig):</b> hydra med rockyou treffer <i>ikke</i> riktig passord (det riktige ligger ikke i rockyou-lista), så Wazuh ser mange <code class="inl">authentication_failed</code> men ingen <code class="inl">authentication_success</code>. Et godt svar skiller forsøk fra vellykket innbrudd. Det er kjernen i å lese en brute force riktig.</p>
       <p class="expl"><b>Punkt 4:</b> agenten sliter med alarmer der konteksten ikke finnes i Wazuh (f.eks. execve/prosess-oppførsel som bare ligger i auditd, ikke ingestet). Det er et reelt poeng om <b>synlighetsgrenser</b> (T.10.6): agenten kan bare se det datakilden faktisk sender.</p>
       <p class="expl"><b>Oppgave 2:</b> et korrekt nytt tool følger mønsteret: <code class="inl">@mcp.tool()</code>, en funksjon med typede argumenter og docstring (agenten leser docstringen for å forstå når verktøyet skal brukes), som kaller <code class="inl">_idx_search(...)</code> eller <code class="inl">_api_get(...)</code> og returnerer JSON. Poenget er at de ser koblingen mellom hvilke verktøy serveren har og hva agenten kan gjøre, ikke at koden er feilfri.</p>
       <p class="expl"><b>Oppgave 3:</b> det er ikke noe fasitsvar, men gode refleksjoner nevner: hallusinasjon/overtolkning, at agenten er like god som datakilden og regelkvaliteten (T.9.5), minste privilegium (derfor lesetilgang), og at mennesket må validere før eskalering/respons. «Ville du stolt på den alene?» Forventet svar er nei: ikke uten menneske-i-loop, logging av tool-kall og begrensede rettigheter.</p>
